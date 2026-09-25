@@ -1,0 +1,32 @@
+<Window x:Class="Fulltxt.App.Views.AddNextcloudWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Nextcloud-Verbindung hinzufügen"
+        Width="440" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize">
+    <StackPanel Margin="16">
+        <TextBlock Text="Anzeigename" Margin="0,0,0,2"/>
+        <TextBox x:Name="DisplayNameBox" Margin="0,0,0,10"/>
+
+        <TextBlock Text="Server-Adresse (z.B. https://cloud.example.com)" Margin="0,0,0,2"/>
+        <TextBox x:Name="ServerUrlBox" Margin="0,0,0,10"/>
+
+        <TextBlock Text="Benutzername" Margin="0,0,0,2"/>
+        <TextBox x:Name="UsernameBox" Margin="0,0,0,10"/>
+
+        <TextBlock Text="App-Passwort (Nextcloud: Einstellungen → Sicherheit → App-Passwörter)" Margin="0,0,0,2" TextWrapping="Wrap"/>
+        <PasswordBox x:Name="AppPasswordBox" Margin="0,0,0,10"/>
+
+        <TextBlock Text="Ordner (optional, Standard: /)" Margin="0,0,0,2"/>
+        <TextBox x:Name="RootPathBox" Text="/" Margin="0,0,0,10"/>
+
+        <TextBlock x:Name="StatusText" Foreground="Gray" Margin="0,0,0,10" TextWrapping="Wrap"/>
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button x:Name="TestConnectionButton" Content="Verbindung testen" Width="140" Margin="0,0,8,0" Click="TestConnectionButton_Click"/>
+            <Button x:Name="OkButton" Content="Hinzufügen" Width="100" Margin="0,0,8,0" Click="OkButton_Click"/>
+            <Button Content="Abbrechen" Width="90" IsCancel="True"/>
+        </StackPanel>
+    </StackPanel>
+</Window>

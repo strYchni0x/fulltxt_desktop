@@ -1,0 +1,19 @@
+## .NET
+bin/
+obj/
+*.user
+.vs/
+
+## Build output
+D:/build/
+
+## Rider/VS
+*.suo
+*.userosscache
+*.sln.docstates
+
+## Local secrets / index data (never commit)
+*.db
+*.db-shm
+*.db-wal
+*.key
