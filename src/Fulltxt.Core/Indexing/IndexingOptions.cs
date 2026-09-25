@@ -12,7 +12,7 @@ public sealed class IndexingOptions
     };
 }
 
-public sealed record IndexingSummary(int Added, int Updated, int Deleted, int Skipped, int Unchanged)
+public sealed record IndexingSummary(int Added, int Updated, int Deleted, int Skipped, int Unchanged, int Failed = 0)
 {
     public int Total => Added + Updated + Unchanged;
 }

@@ -9,4 +9,5 @@ public static class AppPaths
 
     public static string DatabaseFilePath => Path.Combine(DataDirectory, "index.db");
     public static string KeyFilePath => Path.Combine(DataDirectory, "index.key");
+    public static string SettingsFilePath => Path.Combine(DataDirectory, "settings.json");
 }

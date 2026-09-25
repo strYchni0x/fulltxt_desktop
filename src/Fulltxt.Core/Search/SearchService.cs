@@ -6,6 +6,12 @@ namespace Fulltxt.Core.Search;
 
 public sealed class SearchService(IndexDatabase database)
 {
+    /// <summary>Steuerzeichen, die Treffer im Snippet markieren (kollisionsfrei mit echtem Dateitext).</summary>
+    public const char MatchStart = '\u0001';
+    public const char MatchEnd = '\u0002';
+
+    private static readonly System.Text.RegularExpressions.Regex WhitespaceRuns = new(@"\s+");
+
     public IReadOnlyList<SearchHit> Search(string query, int limit = 100)
     {
         var matchExpression = BuildMatchExpression(query);
@@ -14,8 +20,8 @@ public sealed class SearchService(IndexDatabase database)
         using var connection = database.OpenConnection();
         using var cmd = connection.CreateCommand();
         cmd.CommandText = """
-            SELECT f.id, f.file_name, f.relative_path, s.display_name, s.type,
-                   snippet(file_content_fts, 1, '»', '«', ' … ', 12) AS snippet
+            SELECT f.id, f.file_name, f.relative_path, s.display_name, s.type, s.id, f.remote_id, f.web_url,
+                   snippet(file_content_fts, 1, $open, $close, ' … ', 24) AS snippet
             FROM file_content_fts
             JOIN files f ON f.id = file_content_fts.rowid
             JOIN sources s ON s.id = f.source_id
@@ -25,6 +31,8 @@ public sealed class SearchService(IndexDatabase database)
             """;
         cmd.Parameters.AddWithValue("$match", matchExpression);
         cmd.Parameters.AddWithValue("$limit", limit);
+        cmd.Parameters.AddWithValue("$open", MatchStart.ToString());
+        cmd.Parameters.AddWithValue("$close", MatchEnd.ToString());
 
         using var reader = cmd.ExecuteReader();
         var results = new List<SearchHit>();
@@ -37,7 +45,10 @@ public sealed class SearchService(IndexDatabase database)
                 RelativePath = reader.GetString(2),
                 SourceDisplayName = reader.GetString(3),
                 SourceType = Enum.Parse<SourceType>(reader.GetString(4)),
-                Snippet = reader.GetString(5),
+                SourceId = reader.GetInt64(5),
+                RemoteId = reader.IsDBNull(6) ? null : reader.GetString(6),
+                WebUrl = reader.IsDBNull(7) ? null : reader.GetString(7),
+                Snippet = WhitespaceRuns.Replace(reader.IsDBNull(8) ? "" : reader.GetString(8), " "),
             });
         }
         return results;

@@ -31,13 +31,18 @@ public partial class App : Application
         services.AddSingleton<ContentExtractorRegistry>();
         services.AddSingleton(new IndexingOptions());
         services.AddSingleton<LocalFolderIndexer>();
-        services.AddSingleton<NextcloudFolderIndexer>();
+        services.AddSingleton<CloudConnectorFactory>();
+        services.AddSingleton<CloudFolderIndexer>();
+        services.AddSingleton<CloudFileService>();
         services.AddSingleton<IndexingService>();
 
+        services.AddSingleton<ThemeService>();
         services.AddSingleton<MainViewModel>();
         services.AddSingleton<MainWindow>();
 
         Services = services.BuildServiceProvider();
+
+        Services.GetRequiredService<ThemeService>().Initialize();
 
         var mainWindow = Services.GetRequiredService<MainWindow>();
         mainWindow.Show();

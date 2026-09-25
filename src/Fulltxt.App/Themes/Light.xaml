@@ -1,0 +1,22 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- Helle Variante der fulltxt.me-Palette: gleiche Grüntöne (primary-dark als Akzent für Kontrast) -->
+    <SolidColorBrush x:Key="BgBrush" Color="#F4F5F4"/>
+    <SolidColorBrush x:Key="SurfaceBrush" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="SurfaceAltBrush" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="BorderBrush" Color="#E0E3E0"/>
+    <SolidColorBrush x:Key="TextBrush" Color="#0C0C0C"/>
+    <SolidColorBrush x:Key="TextMutedBrush" Color="#666666"/>
+    <SolidColorBrush x:Key="AccentBrush" Color="#16A34A"/>
+    <SolidColorBrush x:Key="AccentHoverBrush" Color="#15803D"/>
+    <SolidColorBrush x:Key="OnAccentBrush" Color="#FFFFFF"/>
+    <SolidColorBrush x:Key="AccentSoftBrush" Color="#E3F6EA"/>
+    <SolidColorBrush x:Key="AccentBorderBrush" Color="#8016A34A"/>
+    <SolidColorBrush x:Key="HighlightBrush" Color="#BDEBCB"/>
+    <SolidColorBrush x:Key="DangerBrush" Color="#C62828"/>
+    <SolidColorBrush x:Key="ScrollThumbBrush" Color="#C9CEC9"/>
+    <RadialGradientBrush x:Key="GlowBrush" GradientOrigin="0.5,0" Center="0.5,0" RadiusX="0.75" RadiusY="0.45">
+        <GradientStop Color="#2016A34A" Offset="0"/>
+        <GradientStop Color="#0016A34A" Offset="1"/>
+    </RadialGradientBrush>
+</ResourceDictionary>

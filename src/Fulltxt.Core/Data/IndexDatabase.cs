@@ -100,6 +100,34 @@ public sealed class IndexDatabase : IDisposable
             );
             """;
         cmd.ExecuteNonQuery();
+
+        Migrate(connection);
+    }
+
+    /// <summary>Schema-Migrationen über PRAGMA user_version. Jede Stufe läuft genau einmal.</summary>
+    private static void Migrate(SqliteConnection connection)
+    {
+        var version = ScalarInt(connection, "PRAGMA user_version;");
+        if (version < 2)
+        {
+            // v2: Cloud-Anbieter - Remote-ID + Web-Link je Datei, Delta-Cursor je Quelle.
+            using var cmd = connection.CreateCommand();
+            cmd.CommandText = """
+                ALTER TABLE files ADD COLUMN remote_id TEXT;
+                ALTER TABLE files ADD COLUMN web_url TEXT;
+                ALTER TABLE sources ADD COLUMN sync_cursor TEXT;
+                CREATE INDEX IF NOT EXISTS idx_files_remote ON files(source_id, remote_id);
+                PRAGMA user_version = 2;
+                """;
+            cmd.ExecuteNonQuery();
+        }
+    }
+
+    private static int ScalarInt(SqliteConnection connection, string sql)
+    {
+        using var cmd = connection.CreateCommand();
+        cmd.CommandText = sql;
+        return Convert.ToInt32(cmd.ExecuteScalar());
     }
 
     public void Dispose()

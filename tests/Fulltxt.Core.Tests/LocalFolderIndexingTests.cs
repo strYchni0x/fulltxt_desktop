@@ -61,6 +61,30 @@ public sealed class LocalFolderIndexingTests : IDisposable
     }
 
     [Fact]
+    public async Task SecondRun_SkipsUnchangedFiles()
+    {
+        File.WriteAllText(Path.Combine(folderToIndex, "a.txt"), "Erste Datei mit Inhalt.");
+        File.WriteAllText(Path.Combine(folderToIndex, "b.txt"), "Zweite Datei mit Inhalt.");
+
+        var keyHex = IndexKeyStore.GetOrCreateKeyHex(keyPath);
+        using var database = new IndexDatabase(dbPath, keyHex);
+        var sourceRepository = new SourceRepository(database);
+        var indexer = new LocalFolderIndexer(new FileIndexRepository(database), new ContentExtractorRegistry(), new IndexingOptions());
+        var id = sourceRepository.Add(new FileSource
+        {
+            Type = SourceType.LocalFolder, DisplayName = "Delta", RootPath = folderToIndex, CreatedUtc = DateTime.UtcNow,
+        });
+        var source = sourceRepository.GetById(id)!;
+
+        await indexer.IndexAsync(source);
+        var second = await indexer.IndexAsync(source);
+
+        // Regression: die Zeitstempel wurden früher in Ortszeit zurückgelesen und nie als "unverändert" erkannt.
+        Assert.Equal(2, second.Unchanged);
+        Assert.Equal(0, second.Added + second.Updated);
+    }
+
+    [Fact]
     public async Task Reindex_DetectsDeletedFile()
     {
         var filePath = Path.Combine(folderToIndex, "temp.txt");
