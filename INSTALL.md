@@ -6,10 +6,25 @@ der Index ist verschlüsselt (SQLCipher, Schlüssel per Windows-Konto/DPAPI gesc
 ## Systemvoraussetzungen
 
 - Windows 10 (1809) oder Windows 11, 64 Bit
-- [.NET 8 Desktop Runtime (x64)](https://dotnet.microsoft.com/download/dotnet/8.0) – nur nötig, wenn du die Variante „framework-abhängig" nutzt
+- Die ZIP-Version braucht keine Runtime. Nur die kleine, selbst gebaute Variante benötigt die [.NET 8 Desktop Runtime (x64)](https://dotnet.microsoft.com/download/dotnet/8.0)
 - Für die Anmeldung bei OneDrive/Dropbox: ein Standardbrowser und freier lokaler Port `53682`
 
-## Variante A: Aus dem Quellcode bauen
+## Variante A: Fertige ZIP-Datei (empfohlen)
+
+1. `FullTXT-Windows-1.0.0-win-x64.zip` herunterladen und in einen beliebigen Ordner entpacken,
+   z. B. `C:\Users\<Name>\AppData\Local\Programs\FullTXT`.
+2. `Fulltxt.App.exe` starten. Es ist keine Installation und keine .NET-Runtime nötig.
+3. Die App ist nicht signiert. Beim ersten Start zeigt Windows SmartScreen eine Warnung:
+   **„Weitere Informationen" → „Trotzdem ausführen"**.
+   Zur Kontrolle kann die Prüfsumme der ZIP-Datei verglichen werden:
+   ```powershell
+   Get-FileHash .\FullTXT-Windows-1.0.0-win-x64.zip -Algorithm SHA256
+   ```
+4. Optional: Rechtsklick auf `Fulltxt.App.exe` → „Verknüpfung erstellen" und die Verknüpfung in den Startmenü- oder Autostart-Ordner legen.
+
+Nur für 64-Bit-Windows (x64), nicht für ARM.
+
+## Variante B: Aus dem Quellcode bauen
 
 Zusätzlich wird das [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) benötigt
 (`winget install Microsoft.DotNet.SDK.8`).
@@ -34,7 +49,7 @@ dotnet publish src/Fulltxt.App -c Release -r win-x64 --self-contained true -p:Pu
 
 Der Ordner `publish` enthält danach `Fulltxt.App.exe`.
 
-## Installieren
+## Selbst gebaute Version installieren
 
 1. Ordner `publish` nach z. B. `C:\Users\<Name>\AppData\Local\Programs\FullTXT` kopieren.
 2. Optional Startmenü-Verknüpfung anlegen:
@@ -87,7 +102,7 @@ Neuinstallation von Windows muss neu indexiert werden. Das ist beabsichtigt.
 
 | Problem | Lösung |
 |---|---|
-| Start bricht ab, „.NET 8 Desktop Runtime" fehlt | Runtime installieren oder Variante „Eigenständig" bauen |
+| Start bricht ab, „.NET 8 Desktop Runtime" fehlt | Betrifft nur die kleine selbst gebaute Variante: Runtime installieren oder die ZIP-Version nutzen |
 | SmartScreen-Warnung beim ersten Start | Die App ist nicht signiert: „Weitere Informationen" → „Trotzdem ausführen" |
 | OneDrive/Dropbox: „redirect_uri" Fehler | Umleitungs-URI in der Konsole fehlt oder ist falsch (siehe Anleitung Azure/Dropbox) |
 | Anmeldung wartet endlos | Port 53682 belegt oder vom Browser blockiert; andere Programme schließen, erneut versuchen |
