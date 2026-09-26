@@ -13,14 +13,14 @@ der Index ist verschlüsselt (SQLCipher). Der Schlüssel ist unter Windows per D
 
 ### Variante A: Fertige ZIP-Datei (empfohlen)
 
-1. `FullTXT-Windows-1.0.0-win-x64.zip` herunterladen und in einen beliebigen Ordner entpacken,
+1. `FullTXT-Windows-1.1.0-win-x64.zip` herunterladen und in einen beliebigen Ordner entpacken,
    z. B. `C:\Users\<Name>\AppData\Local\Programs\FullTXT`.
 2. `Fulltxt.App.exe` starten. Es ist keine Installation und keine .NET-Runtime nötig.
 3. Die App ist nicht signiert. Beim ersten Start zeigt Windows SmartScreen eine Warnung:
    **„Weitere Informationen" → „Trotzdem ausführen"**.
    Zur Kontrolle kann die Prüfsumme der ZIP-Datei verglichen werden:
    ```powershell
-   Get-FileHash .\FullTXT-Windows-1.0.0-win-x64.zip -Algorithm SHA256
+   Get-FileHash .\FullTXT-Windows-1.1.0-win-x64.zip -Algorithm SHA256
    ```
 4. Optional: Rechtsklick auf `Fulltxt.App.exe` → „Verknüpfung erstellen" und die Verknüpfung in den Startmenü- oder Autostart-Ordner legen.
 
@@ -92,8 +92,8 @@ sudo pacman -S libsecret xdg-utils gnome-keyring fontconfig
 ### Installieren
 
 ```bash
-tar xzf fulltxt-linux-x64-1.0.0.tar.gz
-cd fulltxt-linux-x64-1.0.0
+tar xzf fulltxt-linux-x64-1.1.0.tar.gz
+cd fulltxt-linux-x64-1.1.0
 ./install.sh
 ```
 
@@ -105,10 +105,10 @@ Entfernen: `./install.sh --uninstall` (der Index in `~/.local/share/Fulltxt` ble
 ### Aus dem Quellcode bauen (Linux oder Windows)
 
 ```bash
-python3 packaging/linux/build.py 1.0.0
+python3 packaging/linux/build.py 1.1.0
 ```
 
-Erzeugt `../build-linux/fulltxt-linux-x64-1.0.0.tar.gz` (benötigt das .NET 8 SDK).
+Erzeugt `../build-linux/fulltxt-linux-x64-1.1.0.tar.gz` (benötigt das .NET 8 SDK).
 Zum direkten Ausprobieren: `dotnet run --project src/Fulltxt.Linux`.
 
 ### Besonderheiten unter Linux
@@ -131,7 +131,10 @@ Zum direkten Ausprobieren: `dotnet run --project src/Fulltxt.Linux`.
 4. Suchbegriff oben eingeben. Treffer zeigen Textauszug und Dateisymbol.
    - Lokal: **Öffnen** / **Im Ordner zeigen**
    - Cloud: **Im Browser öffnen** (Web-Link) oder **Herunterladen** (nur diese eine Datei, in den Ordner „Downloads")
-5. Design (System/Hell/Dunkel) unter Einstellungen wählen.
+5. Unter Einstellungen lassen sich das Design (System/Hell/Dunkel) und die maximale Trefferzahl (50 bis 1000, Standard 100) wählen.
+6. Eine laufende Indexierung bricht das **X** in der Quellenkachel ab. Bereits gelesene Dateien bleiben erhalten, der nächste Lauf macht dort weiter.
+
+**Was bedeutet „nicht durchsuchbar"?** Die Kachel zeigt pro Quelle, wie viele Dateien durchsuchbar sind. Nicht durchsuchbar sind Dateien, aus denen kein Text ausgelesen werden konnte: Dateitypen ohne Textextraktion (z. B. Bilder, Archive), Dateien ohne lesbaren Text (z. B. gescannte PDFs ohne Textebene, leere oder passwortgeschützte Dateien) und Dateien über dem Größenlimit von 50 MB. Sie erscheinen nicht in den Suchergebnissen, auch nicht über den Dateinamen.
 
 Cloud-Dateien werden nur einmal zum Indexieren gelesen und nicht gespeichert – das spart Plattenplatz.
 Spätere Aktualisierungen laden nur geänderte Dateien.
@@ -147,7 +150,9 @@ Gescannte PDFs ohne Textebene werden noch nicht erkannt (kein OCR).
 |---|---|
 | `%LOCALAPPDATA%\Fulltxt\index.db` (Linux: `~/.local/share/Fulltxt/index.db`) | verschlüsselter Volltextindex |
 | `%LOCALAPPDATA%\Fulltxt\index.key` | Index-Schlüssel, per Windows-DPAPI an dein Benutzerkonto gebunden |
-| `%LOCALAPPDATA%\Fulltxt\settings.json` | Einstellungen (Theme) |
+| `%LOCALAPPDATA%\Fulltxt\settings.json` | Einstellungen (Darstellung, maximale Trefferzahl) |
+
+Mit der Umgebungsvariable `FULLTXT_DATA_DIR` lässt sich der Datenordner verlegen (z. B. für einen zweiten, getrennten Index).
 
 Wichtig: Der Index ist nur im selben Benutzerkonto lesbar (Linux: nur mit demselben Schlüsselbund). Auf einem anderen PC oder nach einer
 Neuinstallation von Windows muss neu indexiert werden. Das ist beabsichtigt.

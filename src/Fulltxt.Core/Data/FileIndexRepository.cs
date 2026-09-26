@@ -218,6 +218,18 @@ public sealed class FileIndexRepository(IndexDatabase database)
         return Convert.ToInt32(cmd.ExecuteScalar());
     }
 
+    /// <summary>Anzahl der erfassten Dateien und davon die ohne Volltext (nicht durchsuchbar).</summary>
+    public (int Total, int NotSearchable) CountFilesDetailed(long sourceId)
+    {
+        using var connection = database.OpenConnection();
+        using var cmd = connection.CreateCommand();
+        cmd.CommandText = "SELECT count(*), coalesce(sum(skipped), 0) FROM files WHERE source_id = $sourceId;";
+        cmd.Parameters.AddWithValue("$sourceId", sourceId);
+        using var reader = cmd.ExecuteReader();
+        reader.Read();
+        return (reader.GetInt32(0), reader.GetInt32(1));
+    }
+
     private int DeleteWhere(long sourceId, IReadOnlyList<string> keys, string condition)
     {
         if (keys.Count == 0) return 0;

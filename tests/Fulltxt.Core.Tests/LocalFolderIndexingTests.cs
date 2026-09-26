@@ -144,4 +144,93 @@ public sealed class LocalFolderIndexingTests : IDisposable
             using var wrongDb = new IndexDatabase(dbPath, wrongKeyHex);
         });
     }
+
+    [Fact]
+    public async Task Summary_ClassifiesNotSearchableFilesByReason()
+    {
+        File.WriteAllText(Path.Combine(folderToIndex, "text.txt"), "Durchsuchbarer Inhalt.");
+        File.WriteAllBytes(Path.Combine(folderToIndex, "foto.jpg"), [1, 2, 3]);
+        File.WriteAllText(Path.Combine(folderToIndex, "leer.txt"), "   ");
+        File.WriteAllText(Path.Combine(folderToIndex, "gross.txt"), new string('x', 200));
+
+        using var database = new IndexDatabase(dbPath, IndexKeyStore.GetOrCreateKeyHex(keyPath));
+        var sourceRepository = new SourceRepository(database);
+        var files = new FileIndexRepository(database);
+        var indexer = new LocalFolderIndexer(files, new ContentExtractorRegistry(), new IndexingOptions { MaxFileSizeBytes = 100 });
+        var id = sourceRepository.Add(new FileSource
+        {
+            Type = SourceType.LocalFolder, DisplayName = "Gruende", RootPath = folderToIndex, CreatedUtc = DateTime.UtcNow,
+        });
+
+        var summary = await indexer.IndexAsync(sourceRepository.GetById(id)!);
+
+        Assert.Equal(4, summary.Added);
+        Assert.Equal(1, summary.SkippedUnsupported); // foto.jpg
+        Assert.Equal(1, summary.SkippedNoText);      // leer.txt
+        Assert.Equal(1, summary.SkippedTooLarge);    // gross.txt
+        Assert.Equal(3, summary.Skipped);
+        Assert.Contains("3 nicht durchsuchbar", summary.Describe());
+        Assert.Equal((4, 3), files.CountFilesDetailed(id));
+
+        // Auch nach einem zweiten Lauf bleibt die Zahl aus der Datenbank korrekt.
+        var second = await indexer.IndexAsync(sourceRepository.GetById(id)!);
+        Assert.Equal(0, second.Skipped);
+        Assert.Equal((4, 3), files.CountFilesDetailed(id));
+    }
+
+    [Fact]
+    public async Task Search_RespectsResultLimit()
+    {
+        for (var i = 0; i < 12; i++) File.WriteAllText(Path.Combine(folderToIndex, $"treffer{i}.txt"), "Gemeinsames Stichwort im Text.");
+
+        using var database = new IndexDatabase(dbPath, IndexKeyStore.GetOrCreateKeyHex(keyPath));
+        var sourceRepository = new SourceRepository(database);
+        var indexer = new LocalFolderIndexer(new FileIndexRepository(database), new ContentExtractorRegistry(), new IndexingOptions());
+        var id = sourceRepository.Add(new FileSource
+        {
+            Type = SourceType.LocalFolder, DisplayName = "Limit", RootPath = folderToIndex, CreatedUtc = DateTime.UtcNow,
+        });
+        await indexer.IndexAsync(sourceRepository.GetById(id)!);
+        var search = new SearchService(database);
+
+        Assert.Equal(5, search.Search("Stichwort", 5).Count);
+        Assert.Equal(12, search.Search("Stichwort", 500).Count);
+        Assert.Equal(12, search.Search("Stichwort").Count); // Standardlimit 100
+    }
+
+    [Fact]
+    public async Task Cancellation_StopsIndexing_AndKeepsAlreadyIndexedFiles()
+    {
+        for (var i = 0; i < 5; i++) File.WriteAllText(Path.Combine(folderToIndex, $"datei{i}.txt"), $"Inhalt {i}");
+
+        using var database = new IndexDatabase(dbPath, IndexKeyStore.GetOrCreateKeyHex(keyPath));
+        var sourceRepository = new SourceRepository(database);
+        var files = new FileIndexRepository(database);
+        var indexer = new LocalFolderIndexer(files, new ContentExtractorRegistry(), new IndexingOptions());
+        var id = sourceRepository.Add(new FileSource
+        {
+            Type = SourceType.LocalFolder, DisplayName = "Abbruch", RootPath = folderToIndex, CreatedUtc = DateTime.UtcNow,
+        });
+        var source = sourceRepository.GetById(id)!;
+
+        using var cts = new CancellationTokenSource();
+        var reported = 0;
+        var progress = new SyncProgress(_ => { if (++reported == 2) cts.Cancel(); });
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => indexer.IndexAsync(source, progress, cts.Token));
+
+        var (total, _) = files.CountFilesDetailed(id);
+        Assert.InRange(total, 1, 4);
+
+        // Der nächste Lauf setzt fort und indexiert den Rest.
+        var resumed = await indexer.IndexAsync(source);
+        Assert.Equal(5, files.CountFilesDetailed(id).Total);
+        Assert.Equal(5, resumed.Added + resumed.Updated + resumed.Unchanged);
+    }
+
+    /// <summary>Progress&lt;T&gt; meldet asynchron über den SynchronizationContext - für deterministische Tests direkt aufrufen.</summary>
+    private sealed class SyncProgress(Action<string> onReport) : IProgress<string>
+    {
+        public void Report(string value) => onReport(value);
+    }
 }

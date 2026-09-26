@@ -8,6 +8,7 @@
     <conv:InverseBooleanConverter x:Key="InverseBool"/>
     <conv:FileIconConverter x:Key="FileIcon"/>
     <conv:EnumEqualsConverter x:Key="EnumEquals"/>
+    <conv:IntEqualsConverter x:Key="IntEquals"/>
 
     <!-- Text -->
     <Style x:Key="SectionTitle" TargetType="TextBlock">

@@ -91,7 +91,7 @@
                                                 <TextBlock Text="{Binding TypeLabel}" Classes="badge"/>
                                             </Border>
                                             <TextBlock Text="{Binding Summary}" FontSize="11" Margin="0,4,0,0"
-                                                       TextTrimming="CharacterEllipsis" Classes="muted"
+                                                       TextWrapping="Wrap" Classes="muted" ToolTip.Tip="{Binding Hint}"
                                                        Classes.error="{Binding HasError}">
                                                 <TextBlock.Styles>
                                                     <Style Selector="TextBlock.error">
@@ -100,18 +100,26 @@
                                                 </TextBlock.Styles>
                                             </TextBlock>
                                             <TextBlock Text="{Binding Details}" FontSize="10" Margin="0,1,0,0"
-                                                       TextTrimming="CharacterEllipsis" Classes="muted"
+                                                       TextWrapping="Wrap" MaxHeight="64" Classes="muted"
                                                        ToolTip.Tip="{Binding Details}"/>
                                         </StackPanel>
-                                        <StackPanel Grid.Column="2" Classes="actions" Margin="4,0,0,0">
-                                            <Button Classes="icon" Width="26" Height="26" ToolTip.Tip="Neu indexieren"
-                                                    AutomationProperties.Name="Neu indexieren"
-                                                    IsEnabled="{Binding IsIdle}"
-                                                    Command="{Binding $parent[Window].DataContext.ReindexSourceCommand}"
+                                        <Panel Grid.Column="2" Margin="4,0,0,0" VerticalAlignment="Top">
+                                            <StackPanel Classes="actions" IsVisible="{Binding IsIdle}">
+                                                <Button Classes="icon" Width="26" Height="26" ToolTip.Tip="Neu indexieren"
+                                                        AutomationProperties.Name="Neu indexieren"
+                                                        Command="{Binding $parent[Window].DataContext.ReindexSourceCommand}"
+                                                        CommandParameter="{Binding}">
+                                                    <PathIcon Data="{StaticResource IconRefresh}" Width="12" Height="12"/>
+                                                </Button>
+                                            </StackPanel>
+                                            <!-- Während der Indexierung immer sichtbar: Lauf abbrechen -->
+                                            <Button Classes="icon" Width="26" Height="26" ToolTip.Tip="Indexierung abbrechen"
+                                                    AutomationProperties.Name="Indexierung abbrechen" IsVisible="{Binding IsBusy}"
+                                                    Command="{Binding $parent[Window].DataContext.CancelIndexingCommand}"
                                                     CommandParameter="{Binding}">
-                                                <PathIcon Data="{StaticResource IconRefresh}" Width="12" Height="12"/>
+                                                <PathIcon Data="{StaticResource IconClose}" Width="12" Height="12"/>
                                             </Button>
-                                        </StackPanel>
+                                        </Panel>
                                     </Grid>
                                 </DataTemplate>
                             </ListBox.ItemTemplate>

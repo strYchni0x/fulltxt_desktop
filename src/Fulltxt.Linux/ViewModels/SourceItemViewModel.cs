@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using Fulltxt.Core.Cloud;
+using Fulltxt.Core.Indexing;
 using Fulltxt.Core.Models;
 
 namespace Fulltxt.Linux.ViewModels;
@@ -10,7 +11,14 @@ public sealed partial class SourceItemViewModel : ObservableObject
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(Summary))]
+    [NotifyPropertyChangedFor(nameof(Hint))]
     private int fileCount;
+
+    /// <summary>Davon ohne Volltext: erfasst, aber nicht durchsuchbar (kein Text auslesbar).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Summary))]
+    [NotifyPropertyChangedFor(nameof(Hint))]
+    private int notSearchableCount;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(Summary))]
@@ -26,11 +34,15 @@ public sealed partial class SourceItemViewModel : ObservableObject
     [ObservableProperty]
     private string details = string.Empty;
 
-    public SourceItemViewModel(FileSource source, int fileCount)
+    public SourceItemViewModel(FileSource source, int fileCount, int notSearchableCount = 0)
     {
         Source = source;
         this.fileCount = fileCount;
+        this.notSearchableCount = notSearchableCount;
     }
+
+    /// <summary>Läuft gerade eine Indexierung, kann sie darüber abgebrochen werden.</summary>
+    public CancellationTokenSource? Cancellation { get; set; }
 
     public string DisplayName => Source.DisplayName;
     public string SubText => Source.Type switch
@@ -44,5 +56,10 @@ public sealed partial class SourceItemViewModel : ObservableObject
     public bool IsLocal => Source.Type == SourceType.LocalFolder;
     public bool IsCloud => !IsLocal;
     public bool IsIdle => !IsBusy;
-    public string Summary => $"{FileCount} Dateien · {StatusText}";
+    public string Summary => NotSearchableCount > 0
+        ? $"{FileCount - NotSearchableCount} durchsuchbar · {NotSearchableCount} nicht durchsuchbar · {StatusText}"
+        : $"{FileCount} Dateien · {StatusText}";
+
+    /// <summary>Tooltip: erklärt, was "nicht durchsuchbar" bedeutet.</summary>
+    public string Hint => NotSearchableCount > 0 ? IndexingSummary.SkippedExplanation : string.Empty;
 }

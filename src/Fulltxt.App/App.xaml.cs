@@ -6,6 +6,7 @@ using Fulltxt.Core.Crypto;
 using Fulltxt.Core.Data;
 using Fulltxt.Core.Indexing;
 using Fulltxt.Core.Search;
+using Fulltxt.Core.Settings;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Fulltxt.App;
@@ -36,6 +37,7 @@ public partial class App : Application
         services.AddSingleton<CloudFileService>();
         services.AddSingleton<IndexingService>();
 
+        services.AddSingleton(_ => UserSettings.Load(AppPaths.SettingsFilePath));
         services.AddSingleton<ThemeService>();
         services.AddSingleton<MainViewModel>();
         services.AddSingleton<MainWindow>();

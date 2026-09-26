@@ -25,7 +25,8 @@ public sealed class CloudFolderIndexer(
         var changes = await connector.GetChangesAsync(current.SyncCursor, ct).ConfigureAwait(false);
 
         var currentPaths = new HashSet<string>();
-        int added = 0, updated = 0, skipped = 0, unchanged = 0, failed = 0;
+        int added = 0, updated = 0, unchanged = 0, failed = 0;
+        int noText = 0, tooLarge = 0;
 
         foreach (var item in changes.Changed)
         {
@@ -80,7 +81,11 @@ public sealed class CloudFolderIndexer(
             }, text);
 
             if (existing is null) added++; else updated++;
-            if (text is null) skipped++;
+            if (text is null)
+            {
+                if (item.Size > options.MaxFileSizeBytes) tooLarge++;
+                else noText++;
+            }
         }
 
         var deleted = 0;
@@ -100,6 +105,7 @@ public sealed class CloudFolderIndexer(
             sources.UpdateSyncCursor(current.Id, changes.NextCursor);
         }
 
-        return new IndexingSummary(added, updated, deleted, skipped, unchanged, failed);
+        // Formate ohne Textextraktion werden bei Cloud-Quellen gar nicht erst aufgenommen (siehe oben), daher kein "unsupported".
+        return new IndexingSummary(added, updated, deleted, unchanged, failed, 0, noText, tooLarge);
     }
 }

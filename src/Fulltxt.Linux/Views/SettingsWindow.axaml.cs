@@ -22,6 +22,16 @@ public partial class SettingsWindow : Window
         ThemeLight.IsChecked = viewModel.SelectedTheme == ThemeMode.Light;
         ThemeDark.IsChecked = viewModel.SelectedTheme == ThemeMode.Dark;
 
+        foreach (var radio in LimitPanel.Children.OfType<RadioButton>())
+        {
+            var limit = int.Parse((string)radio.Tag!);
+            radio.IsChecked = viewModel.MaxSearchResults == limit;
+            radio.IsCheckedChanged += (_, _) =>
+            {
+                if (radio.IsChecked == true) viewModel.MaxSearchResults = limit;
+            };
+        }
+
         ThemeSystem.IsCheckedChanged += (_, _) => Select(viewModel, ThemeSystem, ThemeMode.System);
         ThemeLight.IsCheckedChanged += (_, _) => Select(viewModel, ThemeLight, ThemeMode.Light);
         ThemeDark.IsCheckedChanged += (_, _) => Select(viewModel, ThemeDark, ThemeMode.Dark);

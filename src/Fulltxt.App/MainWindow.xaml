@@ -113,7 +113,8 @@
                                             <Border Style="{StaticResource BadgeBorder}" HorizontalAlignment="Left" Margin="0,4,0,0">
                                                 <TextBlock Text="{Binding TypeLabel}" Style="{StaticResource BadgeText}"/>
                                             </Border>
-                                            <TextBlock Text="{Binding Summary}" FontSize="11" TextTrimming="CharacterEllipsis" Margin="0,4,0,0">
+                                            <TextBlock Text="{Binding Summary}" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0"
+                                                       ToolTip="{Binding Hint}">
                                                 <TextBlock.Style>
                                                     <Style TargetType="TextBlock">
                                                         <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
@@ -125,17 +126,33 @@
                                                     </Style>
                                                 </TextBlock.Style>
                                             </TextBlock>
-                                            <TextBlock Text="{Binding Details}" FontSize="10" TextTrimming="CharacterEllipsis"
+                                            <TextBlock Text="{Binding Details}" FontSize="10" TextWrapping="Wrap" MaxHeight="64"
                                                        Foreground="{DynamicResource TextMutedBrush}" Margin="0,1,0,0"
                                                        ToolTip="{Binding Details}"/>
                                         </StackPanel>
-                                        <StackPanel x:Name="Actions" Grid.Column="2" Orientation="Vertical" Opacity="0" Margin="4,0,0,0">
-                                            <Button Style="{StaticResource IconButton}" Content="&#xE72C;" Width="26" Height="26" FontSize="12"
-                                                    ToolTip="Neu indexieren" AutomationProperties.Name="Neu indexieren"
-                                                    IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBool}}"
-                                                    Command="{Binding DataContext.ReindexSourceCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                        <Grid Grid.Column="2" Margin="4,0,0,0" VerticalAlignment="Top">
+                                            <StackPanel x:Name="Actions" Orientation="Vertical" Opacity="0">
+                                                <StackPanel.Style>
+                                                    <Style TargetType="StackPanel">
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding IsBusy}" Value="True">
+                                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </StackPanel.Style>
+                                                <Button Style="{StaticResource IconButton}" Content="&#xE72C;" Width="26" Height="26" FontSize="12"
+                                                        ToolTip="Neu indexieren" AutomationProperties.Name="Neu indexieren"
+                                                        Command="{Binding DataContext.ReindexSourceCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                        CommandParameter="{Binding}"/>
+                                            </StackPanel>
+                                            <!-- Während der Indexierung immer sichtbar: Lauf abbrechen -->
+                                            <Button Style="{StaticResource IconButton}" Content="&#xE711;" Width="26" Height="26" FontSize="12"
+                                                    ToolTip="Indexierung abbrechen" AutomationProperties.Name="Indexierung abbrechen"
+                                                    Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}"
+                                                    Command="{Binding DataContext.CancelIndexingCommand, RelativeSource={RelativeSource AncestorType=Window}}"
                                                     CommandParameter="{Binding}"/>
-                                        </StackPanel>
+                                        </Grid>
                                     </Grid>
                                     <DataTemplate.Triggers>
                                         <Trigger SourceName="Row" Property="IsMouseOver" Value="True">

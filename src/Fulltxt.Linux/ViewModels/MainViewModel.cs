@@ -11,6 +11,7 @@ using Fulltxt.Core.Data;
 using Fulltxt.Core.Indexing;
 using Fulltxt.Core.Models;
 using Fulltxt.Core.Search;
+using Fulltxt.Core.Settings;
 using Fulltxt.Linux.Services;
 using Fulltxt.Linux.Views;
 
@@ -24,6 +25,7 @@ public sealed partial class MainViewModel : ObservableObject
     private readonly IndexingService indexingService;
     private readonly CloudFileService cloudFileService;
     private readonly ThemeService themeService;
+    private readonly UserSettings settings;
 
     public ObservableCollection<SourceItemViewModel> Sources { get; } = [];
     public ObservableCollection<SearchHit> SearchResults { get; } = [];
@@ -53,12 +55,16 @@ public sealed partial class MainViewModel : ObservableObject
     [ObservableProperty]
     private ThemeMode selectedTheme;
 
+    /// <summary>Höchstzahl der angezeigten Suchergebnisse (Einstellung).</summary>
+    [ObservableProperty]
+    private int maxSearchResults;
+
     public bool HasQuery => !string.IsNullOrWhiteSpace(SearchQuery);
     public bool HasNoSources => Sources.Count == 0;
 
     public MainViewModel(SourceRepository sourceRepository, FileIndexRepository fileIndexRepository,
         SearchService searchService, IndexingService indexingService, CloudFileService cloudFileService,
-        ThemeService themeService)
+        ThemeService themeService, UserSettings settings)
     {
         this.sourceRepository = sourceRepository;
         this.fileIndexRepository = fileIndexRepository;
@@ -66,11 +72,14 @@ public sealed partial class MainViewModel : ObservableObject
         this.indexingService = indexingService;
         this.cloudFileService = cloudFileService;
         this.themeService = themeService;
+        this.settings = settings;
         selectedTheme = themeService.Mode;
+        maxSearchResults = settings.MaxSearchResults;
 
         foreach (var source in sourceRepository.GetAll())
         {
-            Sources.Add(new SourceItemViewModel(source, fileIndexRepository.CountFiles(source.Id)));
+            var (total, notSearchable) = fileIndexRepository.CountFilesDetailed(source.Id);
+            Sources.Add(new SourceItemViewModel(source, total, notSearchable));
         }
         RefreshDerivedState();
     }
@@ -78,6 +87,13 @@ public sealed partial class MainViewModel : ObservableObject
     partial void OnSelectedThemeChanged(ThemeMode value) => themeService.Apply(value);
 
     partial void OnSearchQueryChanged(string value) => Search();
+
+    partial void OnMaxSearchResultsChanged(int value)
+    {
+        settings.MaxSearchResults = value;
+        settings.Save();
+        Search();
+    }
 
     [RelayCommand]
     private async Task OpenSettingsAsync()
@@ -144,9 +160,18 @@ public sealed partial class MainViewModel : ObservableObject
     [RelayCommand]
     private void RemoveSource(SourceItemViewModel item)
     {
+        item.Cancellation?.Cancel();
         sourceRepository.Delete(item.Source.Id);
         Sources.Remove(item);
         Search();
+    }
+
+    [RelayCommand]
+    private void CancelIndexing(SourceItemViewModel item)
+    {
+        if (item.Cancellation is null || item.Cancellation.IsCancellationRequested) return;
+        item.StatusText = "Breche ab …";
+        item.Cancellation.Cancel();
     }
 
     [RelayCommand]
@@ -158,7 +183,7 @@ public sealed partial class MainViewModel : ObservableObject
         {
             try
             {
-                foreach (var hit in searchService.Search(SearchQuery))
+                foreach (var hit in searchService.Search(SearchQuery, MaxSearchResults))
                 {
                     SearchResults.Add(hit);
                 }
@@ -273,16 +298,22 @@ public sealed partial class MainViewModel : ObservableObject
         item.HasError = false;
         item.StatusText = "Indexiere …";
         var progress = new Progress<string>(relativePath => item.Details = relativePath);
+        using var cancellation = new CancellationTokenSource();
+        item.Cancellation = cancellation;
 
         try
         {
-            var summary = await Task.Run(() => indexingService.IndexSourceAsync(item.Source, progress));
-            item.FileCount = fileIndexRepository.CountFiles(item.Source.Id);
+            var summary = await Task.Run(() => indexingService.IndexSourceAsync(item.Source, progress, cancellation.Token), cancellation.Token);
+            RefreshCounts(item);
             item.HasError = summary.Failed > 0;
             item.StatusText = summary.Failed > 0 ? $"{summary.Failed} nicht lesbar" : "Bereit";
-            item.Details = $"{summary.Added} neu, {summary.Updated} aktualisiert, " +
-                           $"{summary.Deleted} entfernt, {summary.Skipped} ohne Volltext" +
-                           (summary.Failed > 0 ? $", {summary.Failed} später erneut versuchen" : "");
+            item.Details = summary.Describe();
+        }
+        catch (OperationCanceledException)
+        {
+            RefreshCounts(item);
+            item.StatusText = "Abgebrochen";
+            item.Details = "Bisher gelesene Dateien bleiben erhalten, der nächste Lauf macht dort weiter.";
         }
         catch (CloudException ex)
         {
@@ -298,9 +329,17 @@ public sealed partial class MainViewModel : ObservableObject
         }
         finally
         {
+            item.Cancellation = null;
             item.IsBusy = false;
             Search();
         }
+    }
+
+    private void RefreshCounts(SourceItemViewModel item)
+    {
+        var (total, notSearchable) = fileIndexRepository.CountFilesDetailed(item.Source.Id);
+        item.FileCount = total;
+        item.NotSearchableCount = notSearchable;
     }
 
     private void RefreshDerivedState()
@@ -309,7 +348,9 @@ public sealed partial class MainViewModel : ObservableObject
 
         if (HasQuery && SearchResults.Count > 0)
         {
-            StatusMessage = $"{SearchResults.Count} Treffer";
+            StatusMessage = SearchResults.Count >= MaxSearchResults
+                ? $"{SearchResults.Count} Treffer angezeigt (Limit erreicht, in den Einstellungen änderbar)"
+                : $"{SearchResults.Count} Treffer";
             ShowEmptyState = false;
             return;
         }
@@ -329,7 +370,7 @@ public sealed partial class MainViewModel : ObservableObject
         else
         {
             EmptyStateTitle = "Volltextsuche für deine Dateien";
-            EmptyStateText = $"{Sources.Sum(s => s.FileCount)} Dateien im lokalen, verschlüsselten Index. Tippe oben einen Suchbegriff ein.";
+            EmptyStateText = $"{Sources.Sum(s => s.FileCount - s.NotSearchableCount)} durchsuchbare Dateien im lokalen, verschlüsselten Index. Tippe oben einen Suchbegriff ein.";
         }
     }
 

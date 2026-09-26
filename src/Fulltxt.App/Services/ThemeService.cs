@@ -1,9 +1,7 @@
-using System.IO;
 using System.Runtime.InteropServices;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Windows;
 using System.Windows.Interop;
+using Fulltxt.Core.Settings;
 using Microsoft.Win32;
 
 namespace Fulltxt.App.Services;
@@ -17,7 +15,7 @@ public enum ThemeMode
 
 /// <summary>Lädt Styles + Hell/Dunkel-Farbpalette zur Laufzeit, speichert die Wahl lokal und
 /// folgt bei "System" live dem Windows-Farbmodus.</summary>
-public sealed class ThemeService
+public sealed class ThemeService(UserSettings settings)
 {
     private const string BaseUri = "pack://application:,,,/Fulltxt.App;component/Themes/";
 
@@ -30,7 +28,7 @@ public sealed class ThemeService
         Application.Current.Resources.MergedDictionaries.Add(
             new ResourceDictionary { Source = new Uri(BaseUri + "Styles.xaml") });
 
-        Mode = LoadMode();
+        Mode = Enum.TryParse<ThemeMode>(settings.Theme, out var stored) ? stored : ThemeMode.System;
         Apply(Mode, save: false);
 
         SystemEvents.UserPreferenceChanged += (_, _) =>
@@ -57,7 +55,11 @@ public sealed class ThemeService
             ApplyTitleBar(window, dark);
         }
 
-        if (save) SaveMode(mode);
+        if (save)
+        {
+            settings.Theme = mode.ToString();
+            settings.Save();
+        }
     }
 
     /// <summary>Färbt die Titelleiste passend zum Theme (sobald das Fenster ein Handle hat).</summary>
@@ -80,39 +82,6 @@ public sealed class ThemeService
     {
         using var key = Registry.CurrentUser.OpenSubKey(@"Software\Microsoft\Windows\CurrentVersion\Themes\Personalize");
         return key?.GetValue("AppsUseLightTheme") is int light && light == 0;
-    }
-
-    private static ThemeMode LoadMode()
-    {
-        try
-        {
-            if (!File.Exists(AppPaths.SettingsFilePath)) return ThemeMode.System;
-            var settings = JsonSerializer.Deserialize<PersistedSettings>(File.ReadAllText(AppPaths.SettingsFilePath));
-            return settings?.Theme ?? ThemeMode.System;
-        }
-        catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException)
-        {
-            return ThemeMode.System;
-        }
-    }
-
-    private static void SaveMode(ThemeMode mode)
-    {
-        try
-        {
-            Directory.CreateDirectory(Path.GetDirectoryName(AppPaths.SettingsFilePath)!);
-            File.WriteAllText(AppPaths.SettingsFilePath, JsonSerializer.Serialize(new PersistedSettings { Theme = mode }));
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            // Theme bleibt für diese Sitzung aktiv, nur die Persistenz schlägt fehl.
-        }
-    }
-
-    private sealed class PersistedSettings
-    {
-        [JsonConverter(typeof(JsonStringEnumConverter))]
-        public ThemeMode Theme { get; set; }
     }
 
     [DllImport("dwmapi.dll")]

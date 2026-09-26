@@ -1,7 +1,6 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using Avalonia;
 using Avalonia.Styling;
+using Fulltxt.Core.Settings;
 
 namespace Fulltxt.Linux.Services;
 
@@ -13,7 +12,7 @@ public enum ThemeMode
 }
 
 /// <summary>Speichert die Hell/Dunkel-Wahl lokal; bei "System" folgt die App dem Farbmodus des Desktops.</summary>
-public sealed class ThemeService
+public sealed class ThemeService(UserSettings settings)
 {
     private Application? application;
 
@@ -22,7 +21,7 @@ public sealed class ThemeService
     public void Initialize(Application app)
     {
         application = app;
-        Mode = LoadMode();
+        Mode = Enum.TryParse<ThemeMode>(settings.Theme, out var stored) ? stored : ThemeMode.System;
         Apply(Mode, save: false);
     }
 
@@ -39,39 +38,10 @@ public sealed class ThemeService
             };
         }
 
-        if (save) SaveMode(mode);
-    }
-
-    private static ThemeMode LoadMode()
-    {
-        try
+        if (save)
         {
-            if (!File.Exists(AppPaths.SettingsFilePath)) return ThemeMode.System;
-            var settings = JsonSerializer.Deserialize<PersistedSettings>(File.ReadAllText(AppPaths.SettingsFilePath));
-            return settings?.Theme ?? ThemeMode.System;
+            settings.Theme = mode.ToString();
+            settings.Save();
         }
-        catch (Exception ex) when (ex is IOException or JsonException or UnauthorizedAccessException)
-        {
-            return ThemeMode.System;
-        }
-    }
-
-    private static void SaveMode(ThemeMode mode)
-    {
-        try
-        {
-            Directory.CreateDirectory(Path.GetDirectoryName(AppPaths.SettingsFilePath)!);
-            File.WriteAllText(AppPaths.SettingsFilePath, JsonSerializer.Serialize(new PersistedSettings { Theme = mode }));
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            // Theme bleibt für diese Sitzung aktiv, nur die Persistenz schlägt fehl.
-        }
-    }
-
-    private sealed class PersistedSettings
-    {
-        [JsonConverter(typeof(JsonStringEnumConverter))]
-        public ThemeMode Theme { get; set; }
     }
 }

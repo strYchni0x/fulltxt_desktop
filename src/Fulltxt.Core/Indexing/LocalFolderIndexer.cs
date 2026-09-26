@@ -8,7 +8,8 @@ public sealed class LocalFolderIndexer(FileIndexRepository repository, ContentEx
     public async Task<IndexingSummary> IndexAsync(FileSource source, IProgress<string>? progress = null, CancellationToken ct = default)
     {
         var currentPaths = new HashSet<string>();
-        int added = 0, updated = 0, skipped = 0, unchanged = 0;
+        int added = 0, updated = 0, unchanged = 0, failed = 0;
+        int unsupported = 0, noText = 0, tooLarge = 0;
 
         foreach (var filePath in SafeDirectoryWalker.EnumerateFiles(source.RootPath))
         {
@@ -36,8 +37,8 @@ public sealed class LocalFolderIndexer(FileIndexRepository repository, ContentEx
 
             progress?.Report(relativePath);
 
-            var tooLarge = info.Length > options.MaxFileSizeBytes;
-            var extractor = tooLarge ? null : extractors.FindExtractor(filePath);
+            var isTooLarge = info.Length > options.MaxFileSizeBytes;
+            var extractor = isTooLarge ? null : extractors.FindExtractor(filePath);
             string? text = null;
             if (extractor is not null)
             {
@@ -48,7 +49,9 @@ public sealed class LocalFolderIndexer(FileIndexRepository repository, ContentEx
                 }
                 catch (IOException)
                 {
-                    // Datei gerade gesperrt/in Benutzung - nächstes Mal erneut versuchen.
+                    // Datei gerade gesperrt/in Benutzung: nicht als erledigt speichern, damit der nächste Lauf es erneut versucht.
+                    failed++;
+                    continue;
                 }
             }
 
@@ -64,10 +67,15 @@ public sealed class LocalFolderIndexer(FileIndexRepository repository, ContentEx
             repository.Upsert(indexedFile, text);
 
             if (existing is null) added++; else updated++;
-            if (text is null) skipped++;
+            if (text is null)
+            {
+                if (isTooLarge) tooLarge++;
+                else if (extractor is null) unsupported++;
+                else noText++;
+            }
         }
 
         var deleted = repository.DeleteMissing(source.Id, currentPaths);
-        return new IndexingSummary(added, updated, deleted, skipped, unchanged);
+        return new IndexingSummary(added, updated, deleted, unchanged, failed, unsupported, noText, tooLarge);
     }
 }

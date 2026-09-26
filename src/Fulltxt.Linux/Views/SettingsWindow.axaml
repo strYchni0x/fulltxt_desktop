@@ -38,10 +38,18 @@
                                         <TextBlock Text="{Binding SubText}" FontSize="11" Classes="muted"
                                                    TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
                                         <TextBlock Text="{Binding Summary}" FontSize="11" Classes="muted"
-                                                   TextTrimming="CharacterEllipsis"/>
+                                                   TextWrapping="Wrap" ToolTip.Tip="{Binding Hint}"/>
+                                        <TextBlock Text="{Binding Details}" FontSize="10" Classes="muted"
+                                                   TextWrapping="Wrap" MaxHeight="64"/>
                                     </StackPanel>
                                     <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="8,0,0,0"
                                                 VerticalAlignment="Center">
+                                        <Button Classes="icon" ToolTip.Tip="Indexierung abbrechen"
+                                                AutomationProperties.Name="Indexierung abbrechen" IsVisible="{Binding IsBusy}"
+                                                Command="{Binding $parent[Window].DataContext.CancelIndexingCommand}"
+                                                CommandParameter="{Binding}">
+                                            <PathIcon Data="{StaticResource IconClose}" Width="12" Height="12"/>
+                                        </Button>
                                         <Button Classes="icon" ToolTip.Tip="Neu indexieren" AutomationProperties.Name="Neu indexieren"
                                                 IsEnabled="{Binding IsIdle}"
                                                 Command="{Binding $parent[Window].DataContext.ReindexSourceCommand}"
@@ -66,6 +74,16 @@
                 <StackPanel Orientation="Horizontal" Margin="0,6,0,0" Spacing="10">
                     <Button Content="+ Ordner hinzufügen" Classes="primary" Command="{Binding AddLocalFolderCommand}"/>
                     <Button Content="+ Cloud-Konto hinzufügen" Command="{Binding AddCloudAccountCommand}"/>
+                </StackPanel>
+
+                <TextBlock Text="SUCHE" Classes="section"/>
+                <TextBlock Text="Maximale Anzahl angezeigter Treffer" Classes="muted" Margin="0,0,0,8"/>
+                <StackPanel x:Name="LimitPanel" Orientation="Horizontal">
+                    <RadioButton Content="50" Tag="50" GroupName="Limit" Classes="pill"/>
+                    <RadioButton Content="100" Tag="100" GroupName="Limit" Classes="pill"/>
+                    <RadioButton Content="250" Tag="250" GroupName="Limit" Classes="pill"/>
+                    <RadioButton Content="500" Tag="500" GroupName="Limit" Classes="pill"/>
+                    <RadioButton Content="1000" Tag="1000" GroupName="Limit" Classes="pill"/>
                 </StackPanel>
 
                 <TextBlock Text="DARSTELLUNG" Classes="section"/>

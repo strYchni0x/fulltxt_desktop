@@ -39,10 +39,16 @@
                                     </DockPanel>
                                     <TextBlock Text="{Binding SubText}" FontSize="11" TextTrimming="CharacterEllipsis"
                                                Foreground="{DynamicResource TextMutedBrush}" Margin="0,2,0,0"/>
-                                    <TextBlock Text="{Binding Summary}" FontSize="11" TextTrimming="CharacterEllipsis"
+                                    <TextBlock Text="{Binding Summary}" FontSize="11" TextWrapping="Wrap" ToolTip="{Binding Hint}"
+                                               Foreground="{DynamicResource TextMutedBrush}"/>
+                                    <TextBlock Text="{Binding Details}" FontSize="10" TextWrapping="Wrap" MaxHeight="64"
                                                Foreground="{DynamicResource TextMutedBrush}"/>
                                 </StackPanel>
                                 <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="8,0,0,0" VerticalAlignment="Center">
+                                    <Button Style="{StaticResource IconButton}" Content="&#xE711;" ToolTip="Indexierung abbrechen" AutomationProperties.Name="Indexierung abbrechen"
+                                            Visibility="{Binding IsBusy, Converter={StaticResource BoolToVis}}"
+                                            Command="{Binding DataContext.CancelIndexingCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                            CommandParameter="{Binding}"/>
                                     <Button Style="{StaticResource IconButton}" Content="&#xE72C;" ToolTip="Neu indexieren" AutomationProperties.Name="Neu indexieren"
                                             IsEnabled="{Binding IsBusy, Converter={StaticResource InverseBool}}"
                                             Command="{Binding DataContext.ReindexSourceCommand, RelativeSource={RelativeSource AncestorType=Window}}"
@@ -63,6 +69,21 @@
                     <Button Content="+ Ordner hinzufügen" Style="{StaticResource PrimaryButton}"
                             Command="{Binding AddLocalFolderCommand}" Margin="0,0,10,0"/>
                     <Button Content="+ Cloud-Konto hinzufügen" Command="{Binding AddCloudAccountCommand}"/>
+                </StackPanel>
+
+                <TextBlock Text="SUCHE" Style="{StaticResource SectionTitle}"/>
+                <TextBlock Text="Maximale Anzahl angezeigter Treffer" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,8"/>
+                <StackPanel Orientation="Horizontal">
+                    <RadioButton Content="50" GroupName="Limit"
+                                 IsChecked="{Binding MaxSearchResults, Converter={StaticResource IntEquals}, ConverterParameter=50}"/>
+                    <RadioButton Content="100" GroupName="Limit"
+                                 IsChecked="{Binding MaxSearchResults, Converter={StaticResource IntEquals}, ConverterParameter=100}"/>
+                    <RadioButton Content="250" GroupName="Limit"
+                                 IsChecked="{Binding MaxSearchResults, Converter={StaticResource IntEquals}, ConverterParameter=250}"/>
+                    <RadioButton Content="500" GroupName="Limit"
+                                 IsChecked="{Binding MaxSearchResults, Converter={StaticResource IntEquals}, ConverterParameter=500}"/>
+                    <RadioButton Content="1000" GroupName="Limit"
+                                 IsChecked="{Binding MaxSearchResults, Converter={StaticResource IntEquals}, ConverterParameter=1000}"/>
                 </StackPanel>
 
                 <TextBlock Text="DARSTELLUNG" Style="{StaticResource SectionTitle}"/>
