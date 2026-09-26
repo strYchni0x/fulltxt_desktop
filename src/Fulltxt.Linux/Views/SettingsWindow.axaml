@@ -1,0 +1,94 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Fulltxt.Linux.Views.SettingsWindow"
+        Title="Einstellungen" Icon="avares://fulltxt/Assets/icon.png"
+        Width="580" Height="680" MinWidth="480" MinHeight="420"
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource BgBrush}" Foreground="{DynamicResource TextBrush}" FontSize="13">
+    <DockPanel Margin="28,22,28,20">
+        <TextBlock DockPanel.Dock="Top" Text="Einstellungen" FontSize="24" FontWeight="ExtraBold"/>
+
+        <Button DockPanel.Dock="Bottom" Content="Schließen" Classes="primary" HorizontalAlignment="Right"
+                Margin="0,16,0,0" MinWidth="110" HorizontalContentAlignment="Center" Click="Close_Click"/>
+
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="0,0,10,0">
+                <TextBlock Text="QUELLEN" Classes="section"/>
+
+                <ItemsControl ItemsSource="{Binding Sources}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Background="{DynamicResource SurfaceAltBrush}" BorderBrush="{DynamicResource BorderBrush}"
+                                    BorderThickness="1" CornerRadius="10" Padding="14,10" Margin="0,0,0,8">
+                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                    <Panel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,12,0">
+                                        <PathIcon Data="{StaticResource IconFolder}" Width="18" Height="18"
+                                                  Classes="accent" IsVisible="{Binding IsLocal}"/>
+                                        <PathIcon Data="{StaticResource IconCloud}" Width="18" Height="18"
+                                                  Classes="accent" IsVisible="{Binding IsCloud}"/>
+                                    </Panel>
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                        <DockPanel LastChildFill="False">
+                                            <Border DockPanel.Dock="Right" Classes="badge" Margin="8,0,0,0">
+                                                <TextBlock Text="{Binding TypeLabel}" Classes="badge"/>
+                                            </Border>
+                                            <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold"
+                                                       TextTrimming="CharacterEllipsis"/>
+                                        </DockPanel>
+                                        <TextBlock Text="{Binding SubText}" FontSize="11" Classes="muted"
+                                                   TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
+                                        <TextBlock Text="{Binding Summary}" FontSize="11" Classes="muted"
+                                                   TextTrimming="CharacterEllipsis"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="8,0,0,0"
+                                                VerticalAlignment="Center">
+                                        <Button Classes="icon" ToolTip.Tip="Neu indexieren" AutomationProperties.Name="Neu indexieren"
+                                                IsEnabled="{Binding IsIdle}"
+                                                Command="{Binding $parent[Window].DataContext.ReindexSourceCommand}"
+                                                CommandParameter="{Binding}">
+                                            <PathIcon Data="{StaticResource IconRefresh}" Width="14" Height="14"/>
+                                        </Button>
+                                        <Button Classes="icon" ToolTip.Tip="Quelle entfernen" AutomationProperties.Name="Quelle entfernen"
+                                                Command="{Binding $parent[Window].DataContext.RemoveSourceCommand}"
+                                                CommandParameter="{Binding}">
+                                            <PathIcon Data="{StaticResource IconTrash}" Width="14" Height="14"/>
+                                        </Button>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <TextBlock Text="Noch keine Ordner oder Konten verknüpft." Classes="muted" Margin="0,0,0,10"
+                           IsVisible="{Binding HasNoSources}"/>
+
+                <StackPanel Orientation="Horizontal" Margin="0,6,0,0" Spacing="10">
+                    <Button Content="+ Ordner hinzufügen" Classes="primary" Command="{Binding AddLocalFolderCommand}"/>
+                    <Button Content="+ Cloud-Konto hinzufügen" Command="{Binding AddCloudAccountCommand}"/>
+                </StackPanel>
+
+                <TextBlock Text="DARSTELLUNG" Classes="section"/>
+                <StackPanel Orientation="Horizontal">
+                    <RadioButton x:Name="ThemeSystem" Content="System" GroupName="Theme" Classes="pill"/>
+                    <RadioButton x:Name="ThemeLight" Content="Hell" GroupName="Theme" Classes="pill"/>
+                    <RadioButton x:Name="ThemeDark" Content="Dunkel" GroupName="Theme" Classes="pill"/>
+                </StackPanel>
+
+                <TextBlock Text="DATENSCHUTZ" Classes="section"/>
+                <Border Background="{DynamicResource SurfaceAltBrush}" BorderBrush="{DynamicResource AccentBorderBrush}"
+                        BorderThickness="1" CornerRadius="12" Padding="18,14">
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="✓  Alles bleibt lokal auf diesem Rechner" Classes="muted"/>
+                        <TextBlock Text="✓  Cloud-Dateien werden nur gelesen, nicht gespeichert – lokal liegt nur der Textindex"
+                                   Classes="muted" TextWrapping="Wrap"/>
+                        <TextBlock Text="✓  Der Suchindex ist verschlüsselt (SQLCipher)" Classes="muted"/>
+                        <TextBlock Text="✓  Der Schlüssel liegt im Schlüsselbund deines Benutzerkontos" Classes="muted"
+                                   TextWrapping="Wrap"/>
+                        <TextBlock Text="✓  Keine Telemetrie, keine Server von uns" Classes="muted"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+    </DockPanel>
+</Window>

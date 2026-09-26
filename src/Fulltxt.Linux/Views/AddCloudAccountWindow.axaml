@@ -1,0 +1,72 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Fulltxt.Linux.Views.AddCloudAccountWindow"
+        Title="Cloud-Konto hinzufügen" Icon="avares://fulltxt/Assets/icon.png"
+        Width="540" SizeToContent="Height" MaxHeight="760" CanResize="False"
+        WindowStartupLocation="CenterOwner"
+        Background="{DynamicResource BgBrush}" Foreground="{DynamicResource TextBrush}" FontSize="13">
+    <Grid Margin="28,22,28,24">
+        <!-- Schritt 1: Anbieter wählen -->
+        <StackPanel x:Name="ChooserPanel">
+            <TextBlock Text="Cloud-Konto hinzufügen" FontSize="22" FontWeight="ExtraBold" Margin="0,0,0,4"/>
+            <TextBlock Text="Deine Dateien bleiben in der Cloud. FullTXT liest sie einmal, speichert nur den durchsuchbaren Text verschlüsselt auf diesem Rechner und lädt später nur die Datei, die du wirklich brauchst."
+                       Classes="muted" TextWrapping="Wrap" Margin="0,0,0,16"/>
+            <ItemsControl x:Name="ProviderList">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <UniformGrid Columns="2"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Button Click="Provider_Click" Margin="0,0,8,8" Padding="14,12" HorizontalAlignment="Stretch"
+                                HorizontalContentAlignment="Stretch" VerticalAlignment="Stretch"
+                                AutomationProperties.Name="{Binding Name}">
+                            <StackPanel>
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <PathIcon Data="{StaticResource IconCloud}" Width="18" Height="18" Classes="accent"/>
+                                    <TextBlock Text="{Binding Name}" FontWeight="Bold" FontSize="14" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <TextBlock Text="{Binding Description}" FontSize="11" TextWrapping="Wrap"
+                                           Classes="muted" Margin="0,6,0,0"/>
+                            </StackPanel>
+                        </Button>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <Button Content="Abbrechen" HorizontalAlignment="Right" Margin="0,8,0,0" Click="Cancel_Click"/>
+        </StackPanel>
+
+        <!-- Schritt 2: Zugangsdaten bzw. Anmeldung -->
+        <StackPanel x:Name="FormPanel" IsVisible="False">
+            <TextBlock x:Name="FormTitle" FontSize="22" FontWeight="ExtraBold" Margin="0,0,0,4"/>
+            <TextBlock x:Name="FormIntro" Classes="muted" TextWrapping="Wrap" Margin="0,0,0,16"/>
+
+            <StackPanel x:Name="PasswordFields">
+                <TextBlock Text="Anzeigename" Classes="muted" Margin="0,0,0,4"/>
+                <TextBox x:Name="DisplayNameBox" Margin="0,0,0,12"/>
+
+                <StackPanel x:Name="ServerRow">
+                    <TextBlock Text="Server-Adresse (z.B. https://cloud.example.com)" Classes="muted" Margin="0,0,0,4"/>
+                    <TextBox x:Name="ServerUrlBox" Margin="0,0,0,12"/>
+                </StackPanel>
+
+                <TextBlock x:Name="UsernameLabel" Classes="muted" Margin="0,0,0,4"/>
+                <TextBox x:Name="UsernameBox" Margin="0,0,0,12"/>
+
+                <TextBlock x:Name="SecretLabel" Classes="muted" Margin="0,0,0,4"/>
+                <TextBox x:Name="SecretBox" PasswordChar="●" Margin="0,0,0,12"/>
+
+                <TextBlock Text="Startordner (optional, Standard: alles)" Classes="muted" Margin="0,0,0,4"/>
+                <TextBox x:Name="StartFolderBox" Text="/" Margin="0,0,0,12"/>
+            </StackPanel>
+
+            <TextBlock x:Name="StatusText" Classes="muted" Margin="0,0,0,12" TextWrapping="Wrap"/>
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+                <Button Content="Zurück" Click="Back_Click"/>
+                <Button x:Name="ActionButton" Classes="primary" Click="Action_Click"/>
+            </StackPanel>
+        </StackPanel>
+    </Grid>
+</Window>

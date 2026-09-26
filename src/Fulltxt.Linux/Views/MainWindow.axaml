@@ -1,0 +1,219 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ctl="using:Fulltxt.Linux.Controls"
+        xmlns:conv="using:Fulltxt.Linux.Converters"
+        x:Class="Fulltxt.Linux.Views.MainWindow"
+        Title="FullTXT" Icon="avares://fulltxt/Assets/icon.png"
+        Width="1120" Height="720" MinWidth="780" MinHeight="480"
+        Background="{DynamicResource BgBrush}" Foreground="{DynamicResource TextBrush}"
+        FontSize="13">
+    <Window.KeyBindings>
+        <KeyBinding Gesture="Escape" Command="{Binding ClearSearchCommand}"/>
+    </Window.KeyBindings>
+
+    <Grid RowDefinitions="Auto,*">
+
+        <!-- Suchzeile über die volle Breite (wie die Navigationsleiste der Website) -->
+        <Border Grid.Row="0" Height="64" Background="{DynamicResource BgBrush}"
+                BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1">
+            <Border x:Name="SearchFrame" Margin="20,10" CornerRadius="10" BorderThickness="1"
+                    Background="{DynamicResource SurfaceAltBrush}" BorderBrush="{DynamicResource BorderBrush}">
+                <Border.Styles>
+                    <Style Selector="Border#SearchFrame:focus-within">
+                        <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}"/>
+                    </Style>
+                </Border.Styles>
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                    <PathIcon Grid.Column="0" Data="{StaticResource IconSearch}" Width="18" Height="18"
+                              Classes="accent" Margin="16,0,12,0"/>
+                    <TextBox Grid.Column="1" x:Name="SearchBox" Classes="search" Watermark="Alle Dateien durchsuchen …"
+                             Text="{Binding SearchQuery, Mode=TwoWay}"/>
+                    <Button Grid.Column="2" Classes="icon" Margin="0,0,6,0" IsVisible="{Binding HasQuery}"
+                            Command="{Binding ClearSearchCommand}" ToolTip.Tip="Suche leeren (Esc)"
+                            AutomationProperties.Name="Suche leeren">
+                        <PathIcon Data="{StaticResource IconClose}" Width="12" Height="12"/>
+                    </Button>
+                </Grid>
+            </Border>
+        </Border>
+
+        <Grid Grid.Row="1" ColumnDefinitions="1*,3*">
+
+            <!-- Links (1/4): verknüpfte Ordner und Konten -->
+            <Border Grid.Column="0" MinWidth="220" Background="{DynamicResource SurfaceBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,1,0">
+                <DockPanel>
+                    <Border DockPanel.Dock="Bottom" BorderBrush="{DynamicResource BorderBrush}"
+                            BorderThickness="0,1,0,0" Padding="10">
+                        <Button Classes="flat" Command="{Binding OpenSettingsCommand}" HorizontalAlignment="Stretch"
+                                HorizontalContentAlignment="Left" ToolTip.Tip="Einstellungen"
+                                AutomationProperties.Name="Einstellungen">
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <PathIcon Data="{StaticResource IconGear}" Width="18" Height="18" Classes="accent"/>
+                                <TextBlock Text="Einstellungen" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
+                    </Border>
+
+                    <Grid DockPanel.Dock="Top" Margin="20,16,12,10">
+                        <TextBlock Text="QUELLEN" Classes="section" Margin="0" VerticalAlignment="Center"/>
+                        <Button Classes="icon" HorizontalAlignment="Right" Width="28" Height="28"
+                                ToolTip.Tip="Alle neu indexieren" AutomationProperties.Name="Alle neu indexieren"
+                                Command="{Binding ReindexAllCommand}">
+                            <PathIcon Data="{StaticResource IconRefresh}" Width="14" Height="14"/>
+                        </Button>
+                    </Grid>
+
+                    <Grid>
+                        <ListBox Classes="sources" ItemsSource="{Binding Sources}">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Classes="row" Background="Transparent" ColumnDefinitions="Auto,*,Auto"
+                                          ToolTip.Tip="{Binding SubText}">
+                                        <Grid.Styles>
+                                            <Style Selector="Grid.row StackPanel.actions">
+                                                <Setter Property="Opacity" Value="0"/>
+                                            </Style>
+                                            <Style Selector="Grid.row:pointerover StackPanel.actions">
+                                                <Setter Property="Opacity" Value="1"/>
+                                            </Style>
+                                        </Grid.Styles>
+                                        <Panel Grid.Column="0" VerticalAlignment="Top" Margin="0,2,10,0">
+                                            <PathIcon Data="{StaticResource IconFolder}" Width="18" Height="18"
+                                                      Classes="accent" IsVisible="{Binding IsLocal}"/>
+                                            <PathIcon Data="{StaticResource IconCloud}" Width="18" Height="18"
+                                                      Classes="accent" IsVisible="{Binding IsCloud}"/>
+                                        </Panel>
+                                        <StackPanel Grid.Column="1">
+                                            <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold"
+                                                       TextTrimming="CharacterEllipsis"/>
+                                            <Border Classes="badge" HorizontalAlignment="Left" Margin="0,4,0,0">
+                                                <TextBlock Text="{Binding TypeLabel}" Classes="badge"/>
+                                            </Border>
+                                            <TextBlock Text="{Binding Summary}" FontSize="11" Margin="0,4,0,0"
+                                                       TextTrimming="CharacterEllipsis" Classes="muted"
+                                                       Classes.error="{Binding HasError}">
+                                                <TextBlock.Styles>
+                                                    <Style Selector="TextBlock.error">
+                                                        <Setter Property="Foreground" Value="{DynamicResource DangerBrush}"/>
+                                                    </Style>
+                                                </TextBlock.Styles>
+                                            </TextBlock>
+                                            <TextBlock Text="{Binding Details}" FontSize="10" Margin="0,1,0,0"
+                                                       TextTrimming="CharacterEllipsis" Classes="muted"
+                                                       ToolTip.Tip="{Binding Details}"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2" Classes="actions" Margin="4,0,0,0">
+                                            <Button Classes="icon" Width="26" Height="26" ToolTip.Tip="Neu indexieren"
+                                                    AutomationProperties.Name="Neu indexieren"
+                                                    IsEnabled="{Binding IsIdle}"
+                                                    Command="{Binding $parent[Window].DataContext.ReindexSourceCommand}"
+                                                    CommandParameter="{Binding}">
+                                                <PathIcon Data="{StaticResource IconRefresh}" Width="12" Height="12"/>
+                                            </Button>
+                                        </StackPanel>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+
+                        <TextBlock Text="Noch keine Ordner oder Konten verknüpft." TextWrapping="Wrap"
+                                   TextAlignment="Center" Classes="muted" Margin="24,32" VerticalAlignment="Top"
+                                   IsVisible="{Binding HasNoSources}"/>
+                    </Grid>
+                </DockPanel>
+            </Border>
+
+            <!-- Rechts (3/4): Suchergebnisse -->
+            <Grid Grid.Column="1">
+                <Rectangle Height="360" VerticalAlignment="Top" IsHitTestVisible="False"
+                           Fill="{DynamicResource GlowBrush}"/>
+
+                <Grid RowDefinitions="Auto,*">
+                    <Grid Grid.Row="0" Margin="24,16,24,10">
+                        <TextBlock Text="{Binding StatusMessage}" Classes="section" Margin="0"
+                                   TextTrimming="CharacterEllipsis" HorizontalAlignment="Left"
+                                   IsVisible="{Binding !ShowEmptyState}"/>
+                        <TextBlock x:Name="Notice" Text="{Binding NoticeText}" FontSize="12"
+                                   TextTrimming="CharacterEllipsis" HorizontalAlignment="Right" MaxWidth="560"
+                                   Foreground="{DynamicResource AccentBrush}" ToolTip.Tip="{Binding NoticeText}"
+                                   Classes.error="{Binding NoticeIsError}">
+                            <TextBlock.Styles>
+                                <Style Selector="TextBlock#Notice.error">
+                                    <Setter Property="Foreground" Value="{DynamicResource DangerBrush}"/>
+                                </Style>
+                            </TextBlock.Styles>
+                        </TextBlock>
+                    </Grid>
+
+                    <ListBox x:Name="SearchResultsList" Grid.Row="1" Classes="results" Margin="16,0,16,0"
+                             ItemsSource="{Binding SearchResults}" DoubleTapped="SearchResultsList_DoubleTapped"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <Grid ColumnDefinitions="52,*">
+                                    <!-- Dateisymbol: Endung auf farbigem Feld -->
+                                    <Border Grid.Column="0" Width="40" Height="40" CornerRadius="10"
+                                            VerticalAlignment="Top" HorizontalAlignment="Left"
+                                            Background="{DynamicResource AccentSoftBrush}"
+                                            BorderBrush="{DynamicResource AccentBorderBrush}" BorderThickness="1">
+                                        <TextBlock Text="{Binding FileName, Converter={x:Static conv:FileTypeLabelConverter.Instance}}"
+                                                   FontSize="10" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Border>
+                                    <StackPanel Grid.Column="1">
+                                        <DockPanel LastChildFill="True">
+                                            <Border DockPanel.Dock="Right" Classes="badge" Margin="12,0,0,0"
+                                                    VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding SourceDisplayName}" Classes="badge"/>
+                                            </Border>
+                                            <TextBlock Text="{Binding FileName}" FontSize="15" FontWeight="Bold"
+                                                       TextTrimming="CharacterEllipsis"/>
+                                        </DockPanel>
+                                        <TextBlock Text="{Binding RelativePath}" FontSize="11" Classes="muted"
+                                                   TextTrimming="CharacterEllipsis" Margin="0,1,0,8"/>
+                                        <ctl:HighlightedTextBlock MarkedText="{Binding Snippet}" TextWrapping="Wrap"
+                                                                  LineHeight="20" Classes="muted"/>
+
+                                        <!-- Aktionen: Cloud = gezielt laden oder im Browser ansehen, lokal = öffnen -->
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0"
+                                                    IsVisible="{Binding IsCloud}">
+                                            <Button Content="Im Browser öffnen" Classes="action" IsVisible="{Binding HasWebUrl}"
+                                                    Command="{Binding $parent[Window].DataContext.OpenInBrowserCommand}"
+                                                    CommandParameter="{Binding}"/>
+                                            <Button Content="Herunterladen" Classes="action"
+                                                    Command="{Binding $parent[Window].DataContext.DownloadCommand}"
+                                                    CommandParameter="{Binding}"/>
+                                        </StackPanel>
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0"
+                                                    IsVisible="{Binding !IsCloud}">
+                                            <Button Content="Öffnen" Classes="action"
+                                                    Command="{Binding $parent[Window].DataContext.OpenFileCommand}"
+                                                    CommandParameter="{Binding}"/>
+                                            <Button Content="Im Ordner zeigen" Classes="action"
+                                                    Command="{Binding $parent[Window].DataContext.ShowInFolderCommand}"
+                                                    CommandParameter="{Binding}"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+
+                    <!-- Leerzustand im Stil des Hero-Bereichs der Website -->
+                    <StackPanel Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="440"
+                                Margin="24,0,24,60" IsVisible="{Binding ShowEmptyState}">
+                        <Border Width="88" Height="88" CornerRadius="20" ClipToBounds="True" HorizontalAlignment="Center"
+                                BoxShadow="0 6 28 0 #59000000">
+                            <Image Source="avares://fulltxt/Assets/icon.png"/>
+                        </Border>
+                        <TextBlock Text="{Binding EmptyStateTitle}" FontSize="24" FontWeight="ExtraBold"
+                                   TextAlignment="Center" TextWrapping="Wrap" Margin="0,24,0,8"/>
+                        <TextBlock Text="{Binding EmptyStateText}" FontSize="14" TextAlignment="Center"
+                                   TextWrapping="Wrap" LineHeight="22" Classes="muted"/>
+                    </StackPanel>
+                </Grid>
+            </Grid>
+        </Grid>
+    </Grid>
+</Window>

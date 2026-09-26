@@ -1,13 +1,12 @@
-using System.Diagnostics;
-using System.Windows;
-using System.Windows.Media;
-using Fulltxt.App.Services;
+using Avalonia.Controls;
+using Avalonia.Interactivity;
+using Avalonia.Media;
 using Fulltxt.Core.Cloud;
 using Fulltxt.Core.Crypto;
 using Fulltxt.Core.Models;
-using Microsoft.Extensions.DependencyInjection;
+using Fulltxt.Linux.Services;
 
-namespace Fulltxt.App.Views;
+namespace Fulltxt.Linux.Views;
 
 public partial class AddCloudAccountWindow : Window
 {
@@ -19,21 +18,20 @@ public partial class AddCloudAccountWindow : Window
     public AddCloudAccountWindow()
     {
         InitializeComponent();
-        App.Services.GetRequiredService<ThemeService>().Attach(this);
         ProviderList.ItemsSource = CloudProviders.All;
         Closed += (_, _) => signInCts?.Cancel();
     }
 
-    private void Provider_Click(object sender, RoutedEventArgs e)
+    private void Provider_Click(object? sender, RoutedEventArgs e)
     {
-        provider = (CloudProviderInfo)((FrameworkElement)sender).DataContext;
-        ChooserPanel.Visibility = Visibility.Collapsed;
-        FormPanel.Visibility = Visibility.Visible;
+        provider = (CloudProviderInfo)((Control)sender!).DataContext!;
+        ChooserPanel.IsVisible = false;
+        FormPanel.IsVisible = true;
         SetStatus("", isError: false);
 
         FormTitle.Text = provider.Name;
         var isOAuth = provider.Auth == CloudAuthKind.OAuth;
-        PasswordFields.Visibility = isOAuth ? Visibility.Collapsed : Visibility.Visible;
+        PasswordFields.IsVisible = !isOAuth;
 
         if (isOAuth)
         {
@@ -44,7 +42,7 @@ public partial class AddCloudAccountWindow : Window
         {
             FormIntro.Text = provider.Description;
             DisplayNameBox.Text = provider.Name;
-            ServerRow.Visibility = provider.ServerEditable ? Visibility.Visible : Visibility.Collapsed;
+            ServerRow.IsVisible = provider.ServerEditable;
             ServerUrlBox.Text = provider.DefaultServerUrl ?? "";
             UsernameLabel.Text = provider.UsernameLabel;
             SecretLabel.Text = provider.SecretLabel;
@@ -52,14 +50,16 @@ public partial class AddCloudAccountWindow : Window
         }
     }
 
-    private void Back_Click(object sender, RoutedEventArgs e)
+    private void Back_Click(object? sender, RoutedEventArgs e)
     {
         signInCts?.Cancel();
-        FormPanel.Visibility = Visibility.Collapsed;
-        ChooserPanel.Visibility = Visibility.Visible;
+        FormPanel.IsVisible = false;
+        ChooserPanel.IsVisible = true;
     }
 
-    private async void Action_Click(object sender, RoutedEventArgs e)
+    private void Cancel_Click(object? sender, RoutedEventArgs e) => Close(false);
+
+    private async void Action_Click(object? sender, RoutedEventArgs e)
     {
         if (provider is null) return;
 
@@ -92,7 +92,7 @@ public partial class AddCloudAccountWindow : Window
         var (account, tokens) = await CloudConnectorFactory.SignInAsync(info.Type,
             uri =>
             {
-                Process.Start(new ProcessStartInfo(uri.AbsoluteUri) { UseShellExecute = true });
+                Shell.Open(uri.AbsoluteUri);
                 return Task.CompletedTask;
             },
             signInCts.Token);
@@ -106,17 +106,17 @@ public partial class AddCloudAccountWindow : Window
             ProtectedCredential = tokens,
             CreatedUtc = DateTime.UtcNow,
         };
-        DialogResult = true;
+        Close(true);
     }
 
     private async Task ConnectWithPasswordAsync(CloudProviderInfo info)
     {
-        var displayName = DisplayNameBox.Text.Trim();
-        var username = UsernameBox.Text.Trim();
-        var secret = SecretBox.Password;
+        var displayName = DisplayNameBox.Text?.Trim() ?? "";
+        var username = UsernameBox.Text?.Trim() ?? "";
+        var secret = SecretBox.Text ?? "";
         var startFolder = string.IsNullOrWhiteSpace(StartFolderBox.Text) ? "/" : StartFolderBox.Text.Trim();
 
-        var serverUrl = info.ServerEditable ? CloudAccountInput.NormalizeServerUrl(ServerUrlBox.Text) : info.DefaultServerUrl!;
+        var serverUrl = info.ServerEditable ? CloudAccountInput.NormalizeServerUrl(ServerUrlBox.Text ?? "") : info.DefaultServerUrl!;
         if (info.ServerEditable && serverUrl is null)
         {
             throw new InvalidOperationException("Bitte eine gültige Server-Adresse angeben (z.B. https://cloud.example.com).");
@@ -146,12 +146,12 @@ public partial class AddCloudAccountWindow : Window
             ProtectedCredential = SecretProtector.ProtectString(secret),
             CreatedUtc = DateTime.UtcNow,
         };
-        DialogResult = true;
+        Close(true);
     }
 
     private void SetStatus(string text, bool isError)
     {
         StatusText.Text = text;
-        StatusText.Foreground = (Brush)FindResource(isError ? "DangerBrush" : "TextMutedBrush");
+        StatusText.Foreground = (IBrush?)(this.TryFindResource(isError ? "DangerBrush" : "TextMutedBrush", ActualThemeVariant, out var brush) ? brush : null);
     }
 }
