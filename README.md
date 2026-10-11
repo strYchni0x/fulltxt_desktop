@@ -52,3 +52,10 @@ Das Windows-Release entsteht mit
 Die Windows-App ist Ende zu Ende gegen simulierte Server getestet. Die Linux-App wurde bisher nur unter Windows
 ausgeführt; der Linux-Schlüsselbund ist nur mit einer Testimplementierung geprüft. OneDrive und Dropbox sind noch
 nicht mit echten Konten getestet. Nicht enthalten: OCR für gescannte PDFs, Hintergrund-Synchronisierung, Code-Signierung.
+
+## Lizenz
+
+Copyright © 2026 Florian Willnat
+
+Freie Software unter der [GNU General Public License](LICENSE), Version 3 oder (nach Ihrer
+Wahl) jeder späteren Version – ohne jede Gewährleistung.
